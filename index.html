@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emoji Pictionary Generator · Teacher's Station</title>
+<meta name="description" content="Random words for Pictionary, Charades, Catchphrase and more. Every word comes with an emoji.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🎨</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --plum:#440249; --plum-deep:#2d0130; --gold:#FFBE00; --gold-press:#c99500;
+  --ink:#241226; --muted:#6b5a6f; --line:#e7dcea; --tint:#faf6fb;
+  --bg:#f4ecf6; --surface:#ffffff; --heading:#440249; --tile:#fff3c7; --track-on:#440249;
+  --shadow:0 1px 0 rgba(68,2,73,.05), 0 10px 26px -16px rgba(68,2,73,.35);
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#14011a; --surface:#22012a; --ink:#f6ecf8; --muted:#c3b0c9; --line:#40184a;
+  --tint:#2c0734; --heading:#FFBE00; --tile:#3b0d45; --track-on:#FFBE00;
+  --shadow:0 10px 26px -16px rgba(0,0,0,.7);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:Montserrat, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background:var(--bg); color:var(--ink); min-height:100vh;
+  display:flex; flex-direction:column; -webkit-font-smoothing:antialiased;
+}
+.emoji{font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif}
+
+/* Brand bar */
+.bar{background:var(--plum); color:#fff; padding-inline:20px}
+.bar-in{max-width:1120px; margin:0 auto; height:56px; display:flex; align-items:center; gap:12px}
+.mark{display:grid; place-items:center; width:34px; height:34px; border-radius:9px; background:var(--gold); color:var(--plum); font-weight:900; font-size:.85rem; letter-spacing:-.02em}
+.brand{font-weight:700; font-size:.76rem; letter-spacing:.16em; text-transform:uppercase}
+
+/* Layout */
+.wrap{
+  flex:1; width:100%; max-width:1120px; margin:0 auto;
+  padding:40px 20px 56px;
+  display:grid; grid-template-columns:minmax(280px,360px) minmax(0,1fr); gap:40px; align-items:start;
+}
+
+/* Controls */
+.panel{position:sticky; top:24px; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:28px; box-shadow:var(--shadow)}
+h1{margin:0 0 10px; color:var(--heading); font-weight:900; font-size:clamp(1.75rem,2.6vw,2.15rem); line-height:1.04; letter-spacing:-.035em}
+.lede{margin:0 0 24px; color:var(--muted); font-size:.92rem; line-height:1.5; font-weight:500}
+.field{margin-bottom:16px}
+.field > label{display:block; margin-bottom:6px; color:var(--muted); font-size:.7rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase}
+.control{
+  width:100%; height:48px; padding:0 14px;
+  font:inherit; font-size:1rem; font-weight:600; color:var(--ink);
+  background:var(--tint); border:1.5px solid var(--line); border-radius:12px;
+}
+.control:focus-visible{outline:3px solid var(--gold); outline-offset:1px; border-color:var(--plum)}
+.select{position:relative}
+.select .control{appearance:none; -webkit-appearance:none; padding-right:42px; cursor:pointer}
+.select::after{
+  content:""; position:absolute; right:17px; top:50%; width:8px; height:8px; pointer-events:none;
+  border-right:2.5px solid var(--heading); border-bottom:2.5px solid var(--heading);
+  transform:translateY(-70%) rotate(45deg);
+}
+.stepper{display:grid; grid-template-columns:48px minmax(0,1fr) 48px; gap:8px}
+.stepper .control{text-align:center; -moz-appearance:textfield}
+.stepper .control::-webkit-outer-spin-button,
+.stepper .control::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
+.step{
+  height:48px; border-radius:12px; border:1.5px solid var(--line); background:var(--surface);
+  color:var(--heading); font:inherit; font-size:1.35rem; font-weight:700; cursor:pointer;
+}
+.step:hover{background:var(--tint)}
+.actions{display:grid; gap:10px; margin-top:22px}
+
+/* Buttons */
+.btn{
+  min-height:48px; padding:0 18px; border-radius:12px; border:1.5px solid transparent; cursor:pointer;
+  font:inherit; font-size:.95rem; font-weight:800; letter-spacing:-.005em;
+  transition:transform .12s ease, background-color .15s ease, box-shadow .12s ease, opacity .15s ease;
+}
+.btn:active{transform:translateY(2px)}
+.btn:focus-visible, .step:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+.btn-gold{background:var(--gold); color:var(--plum-deep); box-shadow:0 3px 0 var(--gold-press)}
+.btn-gold:hover{background:#ffc933}
+.btn-gold:active{box-shadow:0 1px 0 var(--gold-press)}
+.btn-ghost{background:transparent; color:var(--muted); border-color:var(--line)}
+.btn-ghost:hover{color:var(--ink); background:var(--tint)}
+.btn-plum{background:var(--plum); color:#fff; display:inline-flex; align-items:center; gap:8px}
+:root[data-theme="dark"] .btn-plum{background:transparent; color:var(--gold); border-color:var(--gold)}
+.btn-plum:hover{background:var(--plum-deep)}
+.btn:disabled{opacity:.4; cursor:not-allowed; transform:none}
+
+/* Results */
+.results{min-width:0}
+.results-head{max-width:640px; margin:0 auto 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+.meta{margin:0; color:var(--muted); font-size:.74rem; font-weight:800; letter-spacing:.11em; text-transform:uppercase}
+.meta b{color:var(--heading); font-weight:900}
+.list{list-style:none; margin:0 auto; padding:0; max-width:640px; display:grid; gap:12px}
+.item{
+  display:flex; align-items:center; gap:18px;
+  padding:14px 22px 14px 14px; background:var(--surface);
+  border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow);
+  will-change:transform;
+}
+.tile{
+  flex:none; min-width:72px; height:72px; padding:0 8px; border-radius:16px;
+  display:grid; place-items:center; background:var(--tile);
+  font-size:2.6rem; line-height:1; transform:rotate(var(--tilt,0deg));
+}
+.tile.multi{font-size:1.75rem; letter-spacing:-.08em; padding:0 12px}
+.word{font-weight:800; font-size:1.55rem; line-height:1.2; letter-spacing:-.015em; overflow-wrap:anywhere}
+.item.long .word{font-size:1.06rem; font-weight:600; line-height:1.45; letter-spacing:0}
+.item.long .tile{min-width:58px; height:58px; font-size:2rem}
+.item.long .tile.multi{font-size:1.4rem}
+.empty{color:var(--muted); text-align:center; font-weight:600; padding:28px}
+
+.slide .item{animation:rise .44s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 38ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+/* Footer */
+.foot{border-top:1px solid var(--line); padding:22px 20px 30px; text-align:center; color:var(--muted); font-size:.8rem}
+.exp{display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px 22px; margin-bottom:12px}
+.exp-label{font-size:.66rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase}
+.toggle{display:inline-flex; align-items:center; gap:9px; color:var(--ink); font-weight:600; font-size:.85rem; cursor:pointer; position:relative}
+.toggle input{position:absolute; opacity:0; width:1px; height:1px}
+.track{position:relative; width:38px; height:22px; border-radius:99px; background:var(--line); transition:background-color .2s ease}
+.track::after{content:""; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.25); transition:transform .2s ease}
+.toggle input:checked + .track{background:var(--track-on)}
+.toggle input:checked + .track::after{transform:translateX(16px)}
+.toggle input:focus-visible + .track{outline:3px solid var(--gold); outline-offset:2px}
+.credit{margin:0}
+
+@media (max-width:820px){
+  .wrap{grid-template-columns:minmax(0,1fr); gap:24px; padding-top:22px}
+  .panel{position:static; padding:22px}
+  .tile{min-width:60px; height:60px; font-size:2.15rem}
+  .word{font-size:1.28rem}
+  .item{gap:14px; padding:12px 16px 12px 12px}
+}
+@media (prefers-reduced-motion:reduce){
+  .slide .item{animation:none}
+  .btn, .track, .track::after{transition:none}
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="bar-in">
+    <span class="mark" aria-hidden="true">TS</span>
+    <span class="brand">Teacher's Station</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="panel" aria-labelledby="title">
+    <h1 id="title">Emoji Pictionary Generator</h1>
+    <p class="lede">Pick a game and a category, then generate. Every word comes with an emoji.</p>
+    <form id="options" novalidate>
+      <div class="field">
+        <label for="qty">Number of Things</label>
+        <div class="stepper">
+          <button type="button" class="step" data-step="-1" aria-label="One less">−</button>
+          <input id="qty" class="control" type="number" min="1" max="50" value="1" inputmode="numeric">
+          <button type="button" class="step" data-step="1" aria-label="One more">+</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="game">Game</label>
+        <div class="select"><select id="game" class="control"></select></div>
+      </div>
+      <div class="field">
+        <label for="category">Category</label>
+        <div class="select"><select id="category" class="control"></select></div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn btn-gold">Generate Pictionary Words</button>
+        <button type="button" class="btn btn-ghost" id="reset">Reset Options</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="results" aria-label="Results">
+    <div class="results-head">
+      <p class="meta" id="meta" aria-live="polite"></p>
+      <button type="button" class="btn btn-plum" id="shuffle" disabled><span class="emoji" aria-hidden="true">🔀</span> Shuffle</button>
+    </div>
+    <ol id="result" class="list"></ol>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="exp">
+    <span class="exp-label">Experimental features</span>
+    <label class="toggle"><input type="checkbox" id="darkmode"><span class="track"></span>Dark mode</label>
+    <label class="toggle"><input type="checkbox" id="slidein" checked><span class="track"></span>Slide in text</label>
+  </div>
+  <p class="credit">Games and categories based on randomwordgenerator.com · Emoji edition by Teacher's Station</p>
+</footer>
+
+<script src="words.js"></script>
+<script>
+(function(){
+  var GAMES = [
+    {id:2, name:"Pictionary", noun:"words", cats:[[6,"Easy"],[7,"Medium"],[8,"Hard"],[9,"Really Hard"]]},
+    {id:3, name:"Catchphrase", noun:"words", cats:[[13,"Easy"],[14,"Medium"],[15,"Hard"]]},
+    {id:4, name:"Holidays", noun:"words", cats:[[23,"Fourth of July"],[24,"Halloween"],[29,"Thanksgiving"],[30,"Christmas"],[31,"Christmas Songs"],[35,"Spring"],[37,"New Year's"],[38,"Winter"],[39,"Summer"],[40,"Fall"],[44,"Summer Olympics"],[45,"Valentine's Day"]]},
+    {id:5, name:"Charades", noun:"words", cats:[[25,"Easy"],[26,"Medium"],[27,"Hard"],[28,"Really Hard"],[36,"Actions"]]},
+    {id:1, name:"Subjects", noun:"words", cats:[[1,"Animals"],[2,"Food and Cooking"],[3,"People"],[4,"Places"],[52,"Around the House"],[53,"Around the Office"],[54,"Art"],[55,"Colors"],[56,"Common Animals"],[57,"Dog Breeds"],[58,"English Literature"],[59,"Feelings and Emotions"],[60,"Food and Cooking"],[61,"Math"],[62,"Music"],[63,"Nature"],[64,"Science"],[65,"Sports"],[66,"Travel"],[95,"Categories"]]},
+    {id:6, name:"Get to Know You", noun:"questions", cats:[[46,"In-depth questions"],[47,"Light questions"],[48,"Moderate Questions"],[49,"Qualities, Traits, or Experiences"],[50,"Questions for Youngsters"],[51,"This or that"]]},
+    {id:7, name:"Wordplay", noun:"words", cats:[[67,"Adjectives"],[68,"Adverbs"],[69,"Idioms and Sayings"],[70,"Nouns"],[71,"Opposites"],[72,"Pairs"],[73,"Rhyming Opposite Sets"],[74,"Trios"],[75,"Verbs"]]},
+    {id:8, name:"Movies", noun:"movies", cats:[[76,"All Movies"],[77,"Animal Movies"],[80,"Animated Movies"],[81,"Comedies"],[82,"Disney and Pixar Movies"],[83,"Dramas"],[84,"Family Movies"],[85,"Fantasy Movies"],[86,"Historical Movies"],[87,"Live Action Movies"],[88,"Movies Older than 1970"],[89,"Music Movies"],[90,"Sci-Fi Movies"],[91,"Remakes, Spinoffs, Sequels, and Parodies"]]},
+    {id:9, name:"Individuals", noun:"people", cats:[[92,"Celebrities"],[93,"Characters"],[94,"Historical People"]]}
+  ];
+  var ALL_MOVIES = 76, MAX = 50;
+  var WORDS = window.WORDS || {};
+
+  var form = document.getElementById("options");
+  var qty = document.getElementById("qty");
+  var game = document.getElementById("game");
+  var cat = document.getElementById("category");
+  var list = document.getElementById("result");
+  var meta = document.getElementById("meta");
+  var shuffleBtn = document.getElementById("shuffle");
+  var dark = document.getElementById("darkmode");
+  var slide = document.getElementById("slidein");
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  var store = {
+    get: function(k, d){ try { var v = localStorage.getItem("ewg:" + k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+    set: function(k, v){ try { localStorage.setItem("ewg:" + k, JSON.stringify(v)); } catch(e){} }
+  };
+
+  function findGame(id){ for (var i = 0; i < GAMES.length; i++) if (GAMES[i].id == id) return GAMES[i]; return GAMES[0]; }
+  function option(value, text){ var o = document.createElement("option"); o.value = value; o.textContent = text; return o; }
+
+  function fillGames(){ GAMES.forEach(function(g){ game.appendChild(option(g.id, g.name)); }); }
+  function fillCats(){
+    cat.innerHTML = "";
+    findGame(game.value).cats.forEach(function(c){ cat.appendChild(option(c[0], c[1])); });
+  }
+
+  function pool(id){
+    id = +id;
+    if (id !== ALL_MOVIES) return WORDS[id] || [];
+    var seen = {}, out = [];
+    findGame(8).cats.forEach(function(c){
+      if (c[0] === ALL_MOVIES) return;
+      (WORDS[c[0]] || []).forEach(function(item){
+        if (!seen[item[1]]) { seen[item[1]] = 1; out.push(item); }
+      });
+    });
+    return out;
+  }
+
+  function shuffled(arr){
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+
+  function clampQty(){
+    var n = parseInt(qty.value, 10);
+    if (isNaN(n)) n = 1;
+    n = Math.min(MAX, Math.max(1, n));
+    qty.value = n;
+    return n;
+  }
+
+  function emojiCount(s){
+    if (window.Intl && Intl.Segmenter) return Array.from(new Intl.Segmenter().segment(s)).length;
+    return Array.from(s.replace(/[️‍]/g, "")).length;
+  }
+
+  function save(){
+    store.set("game", +game.value);
+    store.set("cat", +cat.value);
+    store.set("qty", +qty.value);
+  }
+
+  function render(items, g, c){
+    list.classList.remove("slide");
+    list.innerHTML = "";
+    if (!items.length) {
+      var empty = document.createElement("li");
+      empty.className = "empty";
+      empty.textContent = "This category has no words yet.";
+      list.appendChild(empty);
+    }
+    items.forEach(function(item, i){
+      var li = document.createElement("li");
+      li.className = "item" + (item[1].length > 38 ? " long" : "");
+      li.style.setProperty("--i", Math.min(i, 18));
+      li.style.setProperty("--tilt", (Math.random() * 6 - 3).toFixed(1) + "deg");
+      var tile = document.createElement("span");
+      tile.className = "tile emoji" + (emojiCount(item[0]) > 1 ? " multi" : "");
+      tile.setAttribute("aria-hidden", "true");
+      tile.textContent = item[0];
+      var word = document.createElement("span");
+      word.className = "word";
+      word.textContent = item[1];
+      li.appendChild(tile);
+      li.appendChild(word);
+      list.appendChild(li);
+    });
+    void list.offsetWidth;
+    if (slide.checked && !reduce.matches) list.classList.add("slide");
+
+    var noun = items.length === 1 ? g.noun.replace(/s$/, "").replace(/^people$/, "person") : g.noun;
+    meta.innerHTML = "";
+    var b = document.createElement("b");
+    b.textContent = items.length + " " + noun;
+    meta.appendChild(b);
+    meta.appendChild(document.createTextNode(" · " + g.name + " · " + c[1]));
+    shuffleBtn.disabled = items.length < 2;
+  }
+
+  function generate(){
+    var n = clampQty();
+    var g = findGame(game.value);
+    var c = g.cats.filter(function(x){ return x[0] == cat.value; })[0] || g.cats[0];
+    render(shuffled(pool(c[0])).slice(0, n), g, c);
+    save();
+  }
+
+  function shuffleResults(){
+    var items = Array.prototype.slice.call(list.querySelectorAll(".item"));
+    if (items.length < 2) return;
+    var order = shuffled(items);
+    if (order.every(function(el, i){ return el === items[i]; })) order.push(order.shift());
+
+    var first = items.map(function(el){ return el.getBoundingClientRect(); });
+    list.classList.remove("slide");
+    order.forEach(function(el){ list.appendChild(el); });
+    if (reduce.matches || !Element.prototype.animate) return;
+
+    items.forEach(function(el, i){
+      var a = first[i], b = el.getBoundingClientRect();
+      var dx = a.left - b.left, dy = a.top - b.top;
+      var drift = Math.random() * 90 - 45, spin = Math.random() * 14 - 7;
+      el.animate([
+        { transform: "translate(" + dx + "px," + dy + "px)" },
+        { transform: "translate(" + (dx * 0.45 + drift) + "px," + (dy * 0.5) + "px) rotate(" + spin + "deg) scale(1.04)", offset: 0.42 },
+        { transform: "none" }
+      ], { duration: 560 + Math.random() * 180, easing: "cubic-bezier(.3,.7,.2,1)" });
+    });
+  }
+
+  function applyTheme(){ document.documentElement.setAttribute("data-theme", dark.checked ? "dark" : "light"); }
+
+  // Wire up
+  fillGames();
+  var savedGame = store.get("game", 2);
+  game.value = findGame(savedGame).id;
+  fillCats();
+  var savedCat = store.get("cat", null);
+  if (savedCat !== null && cat.querySelector('option[value="' + savedCat + '"]')) cat.value = savedCat;
+  qty.value = store.get("qty", 1);
+  dark.checked = store.get("dark", false);
+  slide.checked = store.get("slide", true);
+  applyTheme();
+
+  form.addEventListener("submit", function(e){ e.preventDefault(); generate(); });
+  game.addEventListener("change", function(){ fillCats(); save(); });
+  cat.addEventListener("change", save);
+  qty.addEventListener("change", function(){ clampQty(); save(); });
+  Array.prototype.forEach.call(document.querySelectorAll(".step"), function(btn){
+    btn.addEventListener("click", function(){ qty.value = (parseInt(qty.value, 10) || 1) + (+btn.dataset.step); clampQty(); save(); });
+  });
+  document.getElementById("reset").addEventListener("click", function(){
+    qty.value = 1; game.value = GAMES[0].id; fillCats(); save();
+  });
+  shuffleBtn.addEventListener("click", shuffleResults);
+  dark.addEventListener("change", function(){ applyTheme(); store.set("dark", dark.checked); });
+  slide.addEventListener("change", function(){ store.set("slide", slide.checked); });
+
+  generate();
+})();
+</script>
+</body>
+</html>
