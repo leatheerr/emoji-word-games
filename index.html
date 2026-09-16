@@ -306,7 +306,8 @@ h1{margin:0 0 10px; color:var(--heading); font-weight:900; font-size:clamp(1.75r
       list.appendChild(li);
     });
     void list.offsetWidth;
-    if (slide.checked && !reduce.matches) list.classList.add("slide");
+    if (nextScatter) { nextScatter = false; scatterIn(); }
+    else if (slide.checked && !reduce.matches) list.classList.add("slide");
 
     var noun = items.length === 1 ? g.noun.replace(/s$/, "").replace(/^people$/, "person") : g.noun;
     meta.innerHTML = "";
@@ -314,38 +315,50 @@ h1{margin:0 0 10px; color:var(--heading); font-weight:900; font-size:clamp(1.75r
     b.textContent = items.length + " " + noun;
     meta.appendChild(b);
     meta.appendChild(document.createTextNode(" · " + g.name + " · " + c[1]));
-    shuffleBtn.disabled = items.length < 2;
+    shuffleBtn.disabled = !items.length;
+  }
+
+  var nextScatter = false;
+
+  function scatterIn(){
+    if (reduce.matches || !Element.prototype.animate) return;
+    Array.prototype.forEach.call(list.querySelectorAll(".item"), function(el, i){
+      var dx = Math.random() * 150 - 75, dy = Math.random() * 44 - 22, spin = Math.random() * 12 - 6;
+      el.animate([
+        { transform: "translate(" + dx + "px," + dy + "px) rotate(" + spin + "deg) scale(.96)", opacity: 0 },
+        { transform: "none", opacity: 1 }
+      ], { duration: 440 + Math.random() * 220, delay: Math.min(i, 18) * 30, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
+    });
+  }
+
+  function currentCat(){
+    var g = findGame(game.value);
+    return [g, g.cats.filter(function(x){ return x[0] == cat.value; })[0] || g.cats[0]];
+  }
+
+  // Draws n items from the whole category, skipping the ones already on screen, so a
+  // re-draw brings new words instead of the same set in a different order.
+  function draw(n, items, avoid){
+    var fresh = shuffled(items.filter(function(it){ return avoid.indexOf(it[1]) === -1; }));
+    if (fresh.length >= n) return fresh.slice(0, n);
+    return fresh.concat(shuffled(items.filter(function(it){ return avoid.indexOf(it[1]) !== -1; }))).slice(0, n);
   }
 
   function generate(){
     var n = clampQty();
-    var g = findGame(game.value);
-    var c = g.cats.filter(function(x){ return x[0] == cat.value; })[0] || g.cats[0];
-    render(shuffled(pool(c[0])).slice(0, n), g, c);
+    var gc = currentCat();
+    render(draw(n, pool(gc[1][0]), []), gc[0], gc[1]);
     save();
   }
 
   function shuffleResults(){
-    var items = Array.prototype.slice.call(list.querySelectorAll(".item"));
-    if (items.length < 2) return;
-    var order = shuffled(items);
-    if (order.every(function(el, i){ return el === items[i]; })) order.push(order.shift());
-
-    var first = items.map(function(el){ return el.getBoundingClientRect(); });
-    list.classList.remove("slide");
-    order.forEach(function(el){ list.appendChild(el); });
-    if (reduce.matches || !Element.prototype.animate) return;
-
-    items.forEach(function(el, i){
-      var a = first[i], b = el.getBoundingClientRect();
-      var dx = a.left - b.left, dy = a.top - b.top;
-      var drift = Math.random() * 90 - 45, spin = Math.random() * 14 - 7;
-      el.animate([
-        { transform: "translate(" + dx + "px," + dy + "px)" },
-        { transform: "translate(" + (dx * 0.45 + drift) + "px," + (dy * 0.5) + "px) rotate(" + spin + "deg) scale(1.04)", offset: 0.42 },
-        { transform: "none" }
-      ], { duration: 560 + Math.random() * 180, easing: "cubic-bezier(.3,.7,.2,1)" });
-    });
+    var gc = currentCat();
+    var items = pool(gc[1][0]);
+    if (!items.length) return;
+    var showing = Array.prototype.map.call(list.querySelectorAll(".item .word"), function(e){ return e.textContent; });
+    var n = Math.min(Math.max(showing.length, 1), items.length);
+    nextScatter = true;
+    render(draw(n, items, showing), gc[0], gc[1]);
   }
 
   function applyTheme(){ document.documentElement.setAttribute("data-theme", dark.checked ? "dark" : "light"); }
