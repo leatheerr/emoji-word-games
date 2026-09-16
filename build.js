@@ -1,4 +1,7 @@
 // Collects every data/*.js part into words.js and checks each category.
+// Files are read in filename order, and a category may be declared more than once
+// (e.g. the base list in 01-*.js and later additions in 09-extras-*.js) - the items
+// are merged in that order.
 // Run: node build.js
 const fs = require("fs");
 const path = require("path");
@@ -10,18 +13,19 @@ const EXPECTED = {
   1: [1, 2, 3, 4, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 95],
   6: [46, 47, 48, 49, 50, 51],
   7: [67, 68, 69, 70, 71, 72, 73, 74, 75],
-  8: [77, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91], // 76 "All Movies" is built from these in the app
+  8: [77, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91], // 76 "All Movies" is built in the app from these
   9: [92, 93, 94],
 };
-const TARGET = 70;
+const TARGET = 80;
 
 const WORDS = {};
+const LABELS = {};
 const problems = [];
 
 function W(id, label, text) {
-  if (WORDS[id]) problems.push(`category ${id} (${label}) is defined twice`);
+  const existing = WORDS[id] || [];
+  const seen = new Set(existing.map((item) => item[1].toLowerCase()));
   const items = [];
-  const seen = new Set();
   text.split("\n").map((s) => s.trim()).filter(Boolean).forEach((line) => {
     const sp = line.indexOf(" ");
     if (sp < 1) return problems.push(`${id} ${label}: no emoji/text split in "${line}"`);
@@ -34,9 +38,8 @@ function W(id, label, text) {
     seen.add(key);
     items.push([emoji, words]);
   });
-  WORDS[id] = items;
-  const flag = items.length === TARGET ? "" : `   <-- ${items.length - TARGET > 0 ? "+" : ""}${items.length - TARGET}`;
-  console.log(`${String(id).padStart(3)}  ${label.padEnd(44)} ${String(items.length).padStart(3)}${flag}`);
+  WORDS[id] = existing.concat(items);
+  LABELS[id] = LABELS[id] || label;
 }
 
 const dir = path.join(__dirname, "data");
@@ -44,9 +47,15 @@ for (const f of fs.readdirSync(dir).filter((f) => f.endsWith(".js")).sort()) {
   new Function("W", fs.readFileSync(path.join(dir, f), "utf8"))(W);
 }
 
+for (const id of Object.keys(WORDS)) {
+  const n = WORDS[id].length;
+  const flag = n === TARGET ? "" : `   <-- ${n > TARGET ? "+" : ""}${n - TARGET}`;
+  console.log(`${String(id).padStart(3)}  ${LABELS[id].padEnd(44)} ${String(n).padStart(3)}${flag}`);
+}
+
 const missing = Object.values(EXPECTED).flat().filter((id) => !WORDS[id]);
 if (missing.length) problems.push(`missing categories: ${missing.join(", ")}`);
-const offTarget = Object.entries(WORDS).filter(([, v]) => v.length !== TARGET).map(([k]) => k);
+const offTarget = Object.keys(WORDS).filter((id) => WORDS[id].length !== TARGET);
 if (offTarget.length) problems.push(`categories not at ${TARGET}: ${offTarget.join(", ")}`);
 
 fs.writeFileSync(path.join(__dirname, "words.js"), "window.WORDS=" + JSON.stringify(WORDS) + ";\n");
